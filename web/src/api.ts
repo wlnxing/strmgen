@@ -1,5 +1,6 @@
 export interface OpenListSettings {
   base_url: string
+  download_base_url: string
   username: string
   password_set: boolean
 }
@@ -104,7 +105,7 @@ export const api = {
   me: () => request<{ username: string }>('/api/auth/me'),
   status: () => request<{ active_runs: ActiveRun[] }>('/api/status'),
   getSettings: () => request<OpenListSettings>('/api/settings/openlist'),
-  saveSettings: (payload: { base_url: string; username: string; password?: string }) => request<OpenListSettings>('/api/settings/openlist', { method: 'PUT', body: JSON.stringify(payload) }),
+  saveSettings: (payload: { base_url: string; download_base_url: string; username: string; password?: string }) => request<OpenListSettings>('/api/settings/openlist', { method: 'PUT', body: JSON.stringify(payload) }),
   testSettings: () => request<{ ok: boolean }>('/api/settings/openlist/test', { method: 'POST' }),
   listTasks: async () => (await request<Task[] | null>('/api/tasks')) ?? [],
   createTask: (task: Task) => request<Task>('/api/tasks', { method: 'POST', body: JSON.stringify(task) }),

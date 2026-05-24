@@ -41,7 +41,7 @@ func (s *Service) Run(ctx context.Context, runID int64, task models.Task) (model
 	if err != nil {
 		return stats, err
 	}
-	if settings.BaseURL == "" || settings.Username == "" || settings.PasswordHash == "" {
+	if settings.BaseURL == "" || settings.DownloadBaseURL == "" || settings.Username == "" || settings.PasswordHash == "" {
 		return stats, errors.New("openlist settings are incomplete")
 	}
 
@@ -59,7 +59,7 @@ func (s *Service) Run(ctx context.Context, runID int64, task models.Task) (model
 		if err := s.event(ctx, runID, "info", "scanning "+scanDir); err != nil {
 			return stats, err
 		}
-		if err := s.walk(ctx, client, runID, task, scanDir, &stats, seen, &jobs); err != nil {
+		if err := s.walk(ctx, client, runID, task, settings.BaseURL, settings.DownloadBaseURL, scanDir, &stats, seen, &jobs); err != nil {
 			return stats, err
 		}
 	}
@@ -80,7 +80,7 @@ func (s *Service) Run(ctx context.Context, runID int64, task models.Task) (model
 	return stats, nil
 }
 
-func (s *Service) walk(ctx context.Context, client *openlist.Client, runID int64, task models.Task, dir string, stats *models.RunStats, seen map[string]struct{}, jobs *[]downloadJob) error {
+func (s *Service) walk(ctx context.Context, client *openlist.Client, runID int64, task models.Task, apiBaseURL, downloadBaseURL, dir string, stats *models.RunStats, seen map[string]struct{}, jobs *[]downloadJob) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func (s *Service) walk(ctx context.Context, client *openlist.Client, runID int64
 			continue
 		}
 		if entry.IsDir {
-			if err := s.walk(ctx, client, runID, task, remotePath, stats, seen, jobs); err != nil {
+			if err := s.walk(ctx, client, runID, task, apiBaseURL, downloadBaseURL, remotePath, stats, seen, jobs); err != nil {
 				return err
 			}
 			continue
@@ -110,13 +110,13 @@ func (s *Service) walk(ctx context.Context, client *openlist.Client, runID int64
 		stats.Files++
 		switch {
 		case HasConfiguredSuffix(entry.Name, task.DownloadExtensions):
-			if err := s.prepareDownload(ctx, client, task, remotePath, entry, stats, seen, jobs); err != nil {
+			if err := s.prepareDownload(ctx, client, task, apiBaseURL, remotePath, entry, stats, seen, jobs); err != nil {
 				stats.Errors++
 				_ = s.event(context.Background(), runID, "error", err.Error())
 				return err
 			}
 		case HasConfiguredSuffix(entry.Name, task.StrmExtensions):
-			if err := s.writeSTRM(ctx, client, task, remotePath, entry, stats, seen); err != nil {
+			if err := s.writeSTRM(ctx, client, task, downloadBaseURL, remotePath, entry, stats, seen); err != nil {
 				stats.Errors++
 				_ = s.event(context.Background(), runID, "error", err.Error())
 				return err
@@ -128,7 +128,7 @@ func (s *Service) walk(ctx context.Context, client *openlist.Client, runID int64
 	return nil
 }
 
-func (s *Service) writeSTRM(ctx context.Context, client *openlist.Client, task models.Task, remotePath string, entry openlist.Entry, stats *models.RunStats, seen map[string]struct{}) error {
+func (s *Service) writeSTRM(ctx context.Context, client *openlist.Client, task models.Task, downloadBaseURL, remotePath string, entry openlist.Entry, stats *models.RunStats, seen map[string]struct{}) error {
 	localPath, err := OutputPath(task.OutputRoot, remotePath, true)
 	if err != nil {
 		return err
@@ -138,7 +138,7 @@ func (s *Service) writeSTRM(ctx context.Context, client *openlist.Client, task m
 	if err != nil {
 		return err
 	}
-	downloadURL, err := openlist.BuildDURL(s.mustBaseURL(ctx), remotePath, sign, task.EncodeURL)
+	downloadURL, err := openlist.BuildDURL(downloadBaseURL, remotePath, sign, task.EncodeURL)
 	if err != nil {
 		return err
 	}
@@ -162,7 +162,7 @@ func (s *Service) writeSTRM(ctx context.Context, client *openlist.Client, task m
 	return nil
 }
 
-func (s *Service) prepareDownload(ctx context.Context, client *openlist.Client, task models.Task, remotePath string, entry openlist.Entry, stats *models.RunStats, seen map[string]struct{}, jobs *[]downloadJob) error {
+func (s *Service) prepareDownload(ctx context.Context, client *openlist.Client, task models.Task, apiBaseURL, remotePath string, entry openlist.Entry, stats *models.RunStats, seen map[string]struct{}, jobs *[]downloadJob) error {
 	localPath, err := OutputPath(task.OutputRoot, remotePath, false)
 	if err != nil {
 		return err
@@ -176,7 +176,7 @@ func (s *Service) prepareDownload(ctx context.Context, client *openlist.Client, 
 	if err != nil {
 		return err
 	}
-	downloadURL, err := openlist.BuildDURL(s.mustBaseURL(ctx), remotePath, sign, task.EncodeURL)
+	downloadURL, err := openlist.BuildDURL(apiBaseURL, remotePath, sign, task.EncodeURL)
 	if err != nil {
 		return err
 	}
@@ -200,14 +200,6 @@ func (s *Service) resolveSign(ctx context.Context, client *openlist.Client, remo
 		return "", err
 	}
 	return full.Sign, nil
-}
-
-func (s *Service) mustBaseURL(ctx context.Context) string {
-	settings, err := s.Store.GetOpenListSettings(ctx)
-	if err != nil {
-		return ""
-	}
-	return settings.BaseURL
 }
 
 func (s *Service) runDownloads(ctx context.Context, task models.Task, jobs []downloadJob, stats *models.RunStats) error {

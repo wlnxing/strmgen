@@ -32,8 +32,11 @@
               <n-gi :span="12" :l="4">
                 <n-card title="OpenList 设置" size="small">
                   <n-form :model="settingsForm" label-placement="top">
-                    <n-form-item label="Base URL" :label-props="{ for: 'openlist-base-url' }">
-                      <n-input v-model:value="settingsForm.base_url" input-id="openlist-base-url" name="openlist_base_url" autocomplete="url" :input-props="{ id: 'openlist-base-url', name: 'openlist_base_url', autocomplete: 'url', 'aria-label': 'Base URL' }" placeholder="https://openlist.example.com" />
+                    <n-form-item label="OpenList API 地址" :label-props="{ for: 'openlist-api-base-url' }">
+                      <n-input v-model:value="settingsForm.base_url" input-id="openlist-api-base-url" name="openlist_api_base_url" autocomplete="url" :input-props="{ id: 'openlist-api-base-url', name: 'openlist_api_base_url', autocomplete: 'url', 'aria-label': 'OpenList API 地址' }" placeholder="http://openlist:5244" />
+                    </n-form-item>
+                    <n-form-item label="STRM 下载地址" :label-props="{ for: 'openlist-download-base-url' }">
+                      <n-input v-model:value="settingsForm.download_base_url" input-id="openlist-download-base-url" name="openlist_download_base_url" autocomplete="url" :input-props="{ id: 'openlist-download-base-url', name: 'openlist_download_base_url', autocomplete: 'url', 'aria-label': 'STRM 下载地址' }" placeholder="https://openlist.example.com" />
                     </n-form-item>
                     <n-form-item label="用户名" :label-props="{ for: 'openlist-username' }">
                       <n-input v-model:value="settingsForm.username" input-id="openlist-username" name="openlist_username" autocomplete="username" :input-props="{ id: 'openlist-username', name: 'openlist_username', autocomplete: 'username', 'aria-label': 'OpenList 用户名' }" />
@@ -206,8 +209,8 @@ const runs = ref<Run[]>([])
 const activeRuns = ref<ActiveRun[]>([])
 const runDetail = ref<{ run: Run; events: RunEvent[] } | null>(null)
 
-const loginForm = reactive({ username: 'admin', password: 'admin' })
-const settingsForm = reactive({ base_url: '', username: '', password: '' })
+const loginForm = reactive({ username: '', password: '' })
+const settingsForm = reactive({ base_url: '', download_base_url: '', username: '', password: '' })
 const taskForm = reactive<Task>(defaultTask())
 const syncOptions = [
   { label: '宽松同步', value: 'loose' },
@@ -336,6 +339,7 @@ async function refreshAll() {
     ])
     settings.value = settingsData
     settingsForm.base_url = settingsData.base_url
+    settingsForm.download_base_url = settingsData.download_base_url
     settingsForm.username = settingsData.username
     settingsForm.password = ''
     tasks.value = tasksData

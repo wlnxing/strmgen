@@ -127,9 +127,10 @@ func (s *Server) getOpenListSettings(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) saveOpenListSettings(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		BaseURL  string `json:"base_url"`
-		Username string `json:"username"`
-		Password string `json:"password"`
+		BaseURL         string `json:"base_url"`
+		DownloadBaseURL string `json:"download_base_url"`
+		Username        string `json:"username"`
+		Password        string `json:"password"`
 	}
 	if !decodeJSON(w, r, &req) {
 		return
@@ -140,6 +141,7 @@ func (s *Server) saveOpenListSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	current.BaseURL = strings.TrimRight(strings.TrimSpace(req.BaseURL), "/")
+	current.DownloadBaseURL = strings.TrimRight(strings.TrimSpace(req.DownloadBaseURL), "/")
 	current.Username = strings.TrimSpace(req.Username)
 	if req.Password != "" {
 		current.PasswordHash = openlist.HashPassword(req.Password)

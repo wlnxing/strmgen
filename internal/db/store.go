@@ -63,6 +63,7 @@ func (s *Store) Migrate(ctx context.Context) error {
 		`CREATE TABLE IF NOT EXISTS openlist_settings (
 			id INTEGER PRIMARY KEY CHECK (id = 1),
 			base_url TEXT NOT NULL DEFAULT '',
+			download_base_url TEXT NOT NULL DEFAULT '',
 			username TEXT NOT NULL DEFAULT '',
 			password_hash TEXT NOT NULL DEFAULT '',
 			updated_at TEXT NOT NULL
@@ -145,8 +146,8 @@ func (s *Store) GetUserByUsername(ctx context.Context, username string) (User, e
 
 func (s *Store) GetOpenListSettings(ctx context.Context) (models.OpenListSettings, error) {
 	var st models.OpenListSettings
-	err := s.db.QueryRowContext(ctx, `SELECT base_url, username, password_hash FROM openlist_settings WHERE id = 1`).
-		Scan(&st.BaseURL, &st.Username, &st.PasswordHash)
+	err := s.db.QueryRowContext(ctx, `SELECT base_url, download_base_url, username, password_hash FROM openlist_settings WHERE id = 1`).
+		Scan(&st.BaseURL, &st.DownloadBaseURL, &st.Username, &st.PasswordHash)
 	if errors.Is(err, sql.ErrNoRows) {
 		return st, nil
 	}
@@ -156,14 +157,15 @@ func (s *Store) GetOpenListSettings(ctx context.Context) (models.OpenListSetting
 
 func (s *Store) SaveOpenListSettings(ctx context.Context, st models.OpenListSettings) error {
 	_, err := s.db.ExecContext(ctx, `
-		INSERT INTO openlist_settings (id, base_url, username, password_hash, updated_at)
-		VALUES (1, ?, ?, ?, ?)
+		INSERT INTO openlist_settings (id, base_url, download_base_url, username, password_hash, updated_at)
+		VALUES (1, ?, ?, ?, ?, ?)
 		ON CONFLICT(id) DO UPDATE SET
 			base_url = excluded.base_url,
+			download_base_url = excluded.download_base_url,
 			username = excluded.username,
 			password_hash = excluded.password_hash,
 			updated_at = excluded.updated_at
-	`, st.BaseURL, st.Username, st.PasswordHash, nowString())
+	`, st.BaseURL, st.DownloadBaseURL, st.Username, st.PasswordHash, nowString())
 	return err
 }
 

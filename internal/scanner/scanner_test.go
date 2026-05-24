@@ -71,7 +71,12 @@ func TestServiceRunOpenListFlow(t *testing.T) {
 	if err := store.Migrate(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.SaveOpenListSettings(context.Background(), models.OpenListSettings{BaseURL: serverURL, Username: "user", PasswordHash: openlist.HashPassword("secret")}); err != nil {
+	if err := store.SaveOpenListSettings(context.Background(), models.OpenListSettings{
+		BaseURL:         serverURL,
+		DownloadBaseURL: "https://download.example",
+		Username:        "user",
+		PasswordHash:    openlist.HashPassword("secret"),
+	}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -103,7 +108,7 @@ func TestServiceRunOpenListFlow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantURL := serverURL + "/d/media/Movie.mkv?sign=sig-video\n"
+	wantURL := "https://download.example/d/media/Movie.mkv?sign=sig-video\n"
 	if string(content) != wantURL {
 		t.Fatalf("strm content = %q, want %q", content, wantURL)
 	}

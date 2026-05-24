@@ -13,10 +13,11 @@ const (
 )
 
 type OpenListSettings struct {
-	BaseURL      string `json:"base_url"`
-	Username     string `json:"username"`
-	PasswordHash string `json:"-"`
-	PasswordSet  bool   `json:"password_set"`
+	BaseURL         string `json:"base_url"`
+	DownloadBaseURL string `json:"download_base_url"`
+	Username        string `json:"username"`
+	PasswordHash    string `json:"-"`
+	PasswordSet     bool   `json:"password_set"`
 }
 
 type Task struct {

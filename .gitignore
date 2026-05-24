@@ -1,0 +1,8 @@
+/data/
+/media/
+web/dist/
+web/node_modules/
+*.tmp
+*.log
+
+/strm

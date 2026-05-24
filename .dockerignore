@@ -1,0 +1,11 @@
+.git
+.gitignore
+Dockerfile
+compose.podman.yml
+data
+media
+strm
+web/node_modules
+web/dist
+web/.vite
+*.log

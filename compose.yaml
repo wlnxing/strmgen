@@ -1,10 +1,7 @@
 services:
   strm:
     container_name: strm
-    image: strm:local
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/wlnxing/strmgen:${STRM_IMAGE_TAG:-latest}
     ports:
       - "8080:8080"
     environment:

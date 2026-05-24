@@ -1,18 +1,20 @@
-FROM docker.io/library/node:22-alpine AS web-build
+FROM --platform=$BUILDPLATFORM docker.io/library/node:22-alpine AS web-build
 WORKDIR /src/web
 COPY web/package*.json ./
-RUN npm install
+RUN npm ci
 COPY web/ ./
 RUN npm run build
 
-FROM docker.io/library/golang:1.22-alpine AS go-build
+FROM --platform=$BUILDPLATFORM docker.io/library/golang:1.22-alpine AS go-build
 WORKDIR /src
+ARG TARGETOS
+ARG TARGETARCH
 RUN apk add --no-cache ca-certificates
 COPY go.mod go.sum ./
 RUN go mod download
 COPY cmd ./cmd
 COPY internal ./internal
-RUN go build -trimpath -ldflags="-s -w" -o /out/strm ./cmd/strm
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /out/strm ./cmd/strm
 
 FROM docker.io/library/caddy:2-alpine
 WORKDIR /app
